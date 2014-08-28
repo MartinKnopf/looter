@@ -1,13 +1,11 @@
 module.exports = function (grunt) {
   grunt.initConfig({
     browserify: {
-
-      //working with grunt-watch - do NOT use with keepAlive above
       watchClient: {
         src: ['looter.js'],
         dest: 'bundle.js',
         options: {
-          alias: ['looter.js:./looter', 'node_modules/rx/rx.node.js:rx'],
+          alias: ['looter.js:./looter', 'node_modules/rx/index.js:rx'],
           watch: false
         }
       }
@@ -15,8 +13,6 @@ module.exports = function (grunt) {
 
     watch: {
       browserify: {
-        //note that we target the OUTPUT file from watchClient, and don't trigger browserify
-        //the module watching and rebundling is handled by watchify itself
         files: ['looter.js'],
         tasks: ['browserify:watchClient']
       },
@@ -29,7 +25,7 @@ module.exports = function (grunt) {
           mode: 'zip'
         },
         files: [
-          {src: ['./**'], dest: '/'}, // includes files in path
+          {src: ['./**'], dest: '/'}
         ]
       }
     }

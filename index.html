@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+  <!-- browserify stuff -->
+  <script src="bundle.js"></script>
+  <!-- end browserify stuff -->
+</head>
+<body>
+
+  <script>
+    var looter = require('./looter')
+      , Rx = require('rx');
+  </script>
+
+  <p>time: <span class="time"></span>
+    <script>
+      looter.timestampSource
+        .subscribe(function(value) {
+          $('.time').text(value);
+        });
+    </script>
+  </p>
+
+  <p>horsed ag: <span class="random-price"></span>
+    <canvas id="horsed" width="200" height="100" style="border:1px solid #000000;"></canvas>
+    <script>
+      looter.randSinus
+        .subscribe(function(horsed) {
+          $('.random-price').text(horsed.value);
+        });
+      
+      var randomCanvas = document.getElementById("horsed");
+      var randomCtx = randomCanvas.getContext("2d");
+      randomCtx.fillStyle = "#000";
+
+      looter.randSinus
+        .subscribe(function(horsed) {
+          randomCtx.beginPath();
+          randomCtx.moveTo(horsed.dots.prev.x % randomCanvas.width, randomCanvas.height - horsed.dots.prev.y / 100);
+          randomCtx.lineTo(horsed.dots.curr.x % randomCanvas.width, randomCanvas.height - horsed.dots.curr.y / 100);
+          randomCtx.stroke();
+        });
+      looter.randSinus
+        .where(function(horsed, idx, obs) {
+          return horsed.dots.prev.x % randomCanvas.width === 0;
+        })
+        .subscribe(function() {
+          randomCtx.clearRect(0, 0, randomCanvas.width, randomCanvas.height);
+        });
+    </script>
+  </p>
+
+</body>
+</html>

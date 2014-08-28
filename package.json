@@ -1,0 +1,35 @@
+{
+  "name": "looter",
+  "version": "0.0.0",
+  "description": "Stock market simulation with a CLI for learnung RxJs",
+  "main": "index.html",
+  "window": {
+    "toolbar": false,
+    "width": 800,
+    "height": 600
+  },
+  "dependencies": {
+    "lodash": "^2.4.1",
+    "moment": "^2.8.2",
+    "rx": "^2.3.4"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^2.1.4",
+    "grunt-contrib-compress": "^0.10.0",
+    "grunt-contrib-watch": "^0.6.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Horsed/learning"
+  },
+  "author": "Martin Knopf",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Horsed/learning/issues"
+  },
+  "homepage": "https://github.com/Horsed/learning"
+}

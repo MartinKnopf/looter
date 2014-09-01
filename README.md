@@ -4,28 +4,28 @@ looter
 Stock trading game
 
 ## Development
-Start a watch job that builds using browserify:
 
-    $ grunt browserifyWithWatch
-
-Then open {{index.html}} in the browser.
+Open {{index.html}} in the browser.
 
 ## Build for node-webkit
     $ grunt buildNW
     $ nw.exe looter.zip
 
-## MS - turn based trading
+## MS - turn based trading - 01.09.2014
+* before first turn buying and selling is disabled
 * user can start first turn
+* user can start next turn
 * game consists of 1 stock with a random price
 * in every turn the price is randomly generated
-* when stock is not bought user can buy stock in a turn
+* user can buy stock in a turn
 * buying affects balance
-* buying leads to next turn
-* when stock is bought user can sell in next turn
+* user can only buy for his remaining balance
+* when stock is bought user can sell immediately for the current stock price
 * selling affects balance
-* selling leads to next turn
+* user can only sell the exact amount of stocks that he bought
 
 ## MS - turn limitations
+* there are no negative prices
 * game is limited to ten runs
 * user can restart game at any time
 * restarting resets balance, turn count and starts new turn

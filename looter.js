@@ -37,27 +37,33 @@
     .distinctUntilChanged(function(x) { return x.event; })
     .map(function(x) { return x.price; })
 
+  var newStockAmount = newBuy
+    .map(function() { return 1; })
+    .merge(newSell.map(function() { return -1; }))
+    .scan(0, function(acc, x) { return acc + x; })
+
   var balance = Rx.Observable
     .merge(Rx.Observable.return(10000), newBuy, newSell)
     .scan(function(sum, price) { return sum + price; })
-    .filter(function(balance) { return balance >= 0; })
+
+  var canBuy = Rx.Observable
+    .combineLatest(balance, newPrice, function(balance, price) { return {balance: balance, price: price}; })
+    .filter(function(x) { return x.balance >= x.price; })
+
+  var cannotBuy = Rx.Observable
+    .combineLatest(balance, newPrice, function(balance, price) { return {balance: balance, price: price}; })
+    .filter(function(x) { return x.balance < x.price; })
+
+  var canSell = newStockAmount
+    .filter(function(amount) { return amount > 0; })
+
+  var cannotSell = newStockAmount
+    .filter(function(amount) { return amount <= 0; })
 
   // observers
 
   nextTurn.subscribe(function(turn) {
     $('.turn-nr').text(turn);
-    $('.stock1 .buy').prop('disabled', false);
-    $('.stock1 .sell').prop('disabled', false);
-  })
-
-  clickBuy.subscribe(function() {
-    $('.stock1 .buy').prop('disabled', true);
-    $('.stock1 .sell').prop('disabled', true);
-  })
-
-  clickSell.subscribe(function() {
-    $('.stock1 .sell').prop('disabled', true);
-    $('.stock1 .buy').prop('disabled', true);
   })
 
   newPrice.subscribe(function(price) {
@@ -66,6 +72,30 @@
 
   balance.subscribe(function(balance) {
     $('.balance').text(balance);
+  })
+
+  canBuy.subscribe(function(price) {
+    $('.stock1 .buy').prop('disabled', false);
+  })
+
+  cannotBuy.subscribe(function(price) {
+    $('.stock1 .buy').prop('disabled', true);
+  })
+
+  canSell.subscribe(function(price) {
+    $('.stock1 .sell').prop('disabled', false);
+  })
+
+  cannotSell.subscribe(function(price) {
+    $('.stock1 .sell').prop('disabled', true);
+  })
+
+  newBuy.subscribe(function(price) {
+    $('.stock1 .sell').prop('disabled', false);
+  })
+
+  newStockAmount.subscribe(function(amount) {
+    $('.stock1 .amount').text(amount);
   })
 
   newPrice.connect()

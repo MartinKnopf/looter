@@ -24,7 +24,7 @@ Open {{index.html}} in the browser.
 * selling affects balance
 * user can only sell the exact amount of stocks that he bought
 
-## MS - turn limitations
+## MS - turn limitations - 04.09.2014
 * there are no negative prices
 * game is limited to ten runs
 * user can restart game at any time

@@ -5,81 +5,158 @@ stocks = [{
 
 sinPrice = (min, max, x) -> Math.floor((Math.sin(x) + 1.4) * (max + 1 - min) + min)
 randomize = (min, max, price) -> Math.floor(_.random(price - _.random(min, max) / 2, price + _.random(min, max) / 2))
+maxDiff (int arr[], int n)
+{
+    // Initialize diff, current sum and max sum
+    int diff = arr[1]-arr[0];
+    int curr_sum = diff;
+    int max_sum = curr_sum;
+ 
+    for(int i=1; i<n-1; i++)
+    {
+        // Calculate current diff
+        diff = arr[i+1]-arr[i];
+ 
+        // Calculate current sum
+        if (curr_sum > 0)
+           curr_sum += diff;
+        else
+           curr_sum = diff;
+ 
+        // Update max sum, if needed
+        if (curr_sum > max_sum)
+           max_sum = curr_sum;
+    }
+ 
+    return max_sum;
+}
 resetUi = ->
   $('.turn-nr').text('')
   $('.stock1 .price').text('')
+  $('.max-possible-balance-container').hide()
+  $('.score-container').hide()
+
+resetUi()
 
 clickStartGame  = Rx.Observable.fromEvent($('.start-new-game'), 'click')
-clickNextTurn   = Rx.Observable.fromEvent($('.next-turn'), 'click')
-clickBuy        = Rx.Observable.fromEvent($('.stock1 .buy'), 'click')
-clickSell       = Rx.Observable.fromEvent($('.stock1 .sell'), 'click')
 
-newTurn = clickNextTurn
-  .select((event, idx) -> idx + 1)
-  .take(10)
-  .merge(clickStartGame.map(_.constant(0)))
+clickStartGame.subscribe(->
 
-newPrice = newTurn
-  .filter((x) -> x != 0 )
-  .map(_.partial(sinPrice, stocks[0].min, stocks[0].max))
-  .map(_.partial(randomize, stocks[0].min, stocks[0].max))
-  .publish()
+  resetUi()
 
-newBuy = Rx.Observable
-  .combineLatest(clickBuy, newPrice, (event, price) -> {event: event, price: price})
-  .distinctUntilChanged((x) -> x.event)
-  .map((x) -> -x.price)
+  $('.end-turn').prop('disabled', false)
 
-newSell = Rx.Observable
-  .combineLatest(clickSell, newPrice, (event, price) -> {event: event, price: price})
-  .distinctUntilChanged((x) -> x.event)
-  .map((x) -> x.price)
+  clickNextTurn = Rx.Observable.fromEvent($('.end-turn'), 'click')
+  clickBuy      = Rx.Observable.fromEvent($('.stock1 .buy'), 'click')
+  clickSell     = Rx.Observable.fromEvent($('.stock1 .sell'), 'click')
 
-newStockAmount = newBuy
-  .map(() -> 1 )
-  .merge(newSell.map(() -> -1 ))
-  .scan(0, (acc, x) -> acc + x)
-  .merge(clickStartGame.map(_.constant(0)))
+  newTurn = clickNextTurn
+    .startWith(1)
+    .select((event, idx) -> idx + 1)
+    .take(11)
 
-balance = Rx.Observable
-  .merge(newBuy, newSell)
-  .scan((sum, price) -> sum + price)
-  .merge(clickStartGame.map(_.constant(10000)))
+  lastTurn = newTurn
+    .filter((x) -> x > 10)
 
-canBuy = Rx.Observable
-  .combineLatest(balance, newPrice, (balance, price) -> {balance: balance, price: price})
-  .filter((x) -> x.balance >= x.price)
+  newPrice = newTurn
+    .map(_.partial(sinPrice, stocks[0].min, stocks[0].max))
+    .map(_.partial(randomize, stocks[0].min, stocks[0].max))
+    .takeUntil(lastTurn)
+    .publish()
 
-cannotBuy = Rx.Observable
-  .combineLatest(balance, newPrice, (balance, price) -> {balance: balance, price: price})
-  .filter((x) -> x.balance < x.price)
-  .merge(clickStartGame)
+  lowestPrice = newPrice
+    .scan(10000, (acc, price) -> if acc <= price then acc else price)
 
-canSell = newStockAmount
-  .filter((amount) -> amount > 0)
+  newBuy = Rx.Observable
+    .combineLatest(clickBuy, newPrice, (event, price) -> {event: event, price: price})
+    .distinctUntilChanged((x) -> x.event)
+    .map((x) -> -x.price)
+    .takeUntil(lastTurn)
 
-cannotSell = newStockAmount
-  .filter((amount) -> amount <= 0)
-  .merge(clickStartGame)
+  newSell = Rx.Observable
+    .combineLatest(clickSell, newPrice, (event, price) -> {event: event, price: price})
+    .distinctUntilChanged((x) -> x.event)
+    .map((x) -> x.price)
+    .takeUntil(lastTurn)
 
-clickStartGame.subscribe(resetUi)
+  newStockAmount = newBuy
+    .map(() -> 1)
+    .merge(newSell.map(() -> -1 ))
+    .scan(0, (acc, x) -> acc + x)
+    .startWith(0)
+    .takeUntil(lastTurn)
 
-newTurn.subscribe((balance) -> $('.turn-nr').text(balance))
+  balance = Rx.Observable
+    .merge(newBuy, newSell)
+    .startWith(10000)
+    .scan((sum, price) -> sum + price)
+    .takeUntil(lastTurn)
 
-newPrice.subscribe((balance) -> $('.stock1 .price').text(balance))
+  canBuy = Rx.Observable
+    .combineLatest(balance, newPrice, (balance, price) -> {balance: balance, price: price})
+    .filter((x) -> x.balance >= x.price)
+    .takeUntil(lastTurn)
 
-balance.subscribe((balance) -> $('.balance').text(balance))
+  cannotBuy = Rx.Observable
+    .combineLatest(balance, newPrice, (balance, price) -> {balance: balance, price: price})
+    .filter((x) -> x.balance < x.price)
+    .merge(lastTurn)
+    .startWith(true)
 
-canBuy.subscribe((price) -> $('.stock1 .buy').prop('disabled', false))
+  canSell = newStockAmount
+    .filter((amount) -> amount > 0)
+    .takeUntil(lastTurn)
 
-cannotBuy.subscribe((price) -> $('.stock1 .buy').prop('disabled', true))
+  cannotSell = newStockAmount
+    .filter((amount) -> amount <= 0)
+    .merge(lastTurn)
+    .startWith(true)
 
-canSell.subscribe((price) -> $('.stock1 .sell').prop('disabled', false))
+  maxPossibleBalance = lastTurn
+    .merge(
+      balance
+        .last()
+        .combineLatest(newPrice.toArray(), (balance, prices) ->
+          minPrice = _.min(prices)
+          maxprice = _.max(prices)
+          if _.find(minPrice) > _.find(maxPrice)
+            # ...
+          
+          Math.floor(10000 / minPrice) * maxPrice))
 
-cannotSell.subscribe((price) -> $('.stock1 .sell').prop('disabled', true))
+  score = maxPossibleBalance
+    .combineLatest(balance.last(), (max, actual) -> Math.round(actual / max * 10000) / 100)
 
-newBuy.subscribe((price) -> $('.stock1 .sell').prop('disabled', false))
+  newTurn.subscribe((turn) -> $('.turn-nr').text(turn))
 
-newStockAmount.subscribe((amount) -> $('.stock1 .amount').text(amount))
+  lastTurn.subscribe(->
+    $('.turn-nr').text('game over')
+    $('.end-turn').prop('disabled', true))
 
-newPrice.connect()
+  newPrice.subscribe((price) -> $('.stock1 .price').text(price))
+
+  balance.subscribe((balance) -> $('.balance').text(balance))
+
+  canBuy.subscribe(-> $('.stock1 .buy').prop('disabled', false))
+
+  cannotBuy.subscribe(-> $('.stock1 .buy').prop('disabled', true))
+
+  canSell.subscribe(-> $('.stock1 .sell').prop('disabled', false))
+
+  cannotSell.subscribe(-> $('.stock1 .sell').prop('disabled', true))
+
+  newBuy.subscribe(-> $('.stock1 .sell').prop('disabled', false))
+
+  newStockAmount.subscribe((amount) -> $('.stock1 .amount').text(amount))
+
+  maxPossibleBalance.subscribe((maxPossibleBalance) ->
+    $('.max-possible-balance-container').show()
+    $('.max-possible-balance').text(maxPossibleBalance))
+
+  score.subscribe((score) ->
+    $('.score-container').show()
+    $('.score').text(score + ' %'))
+
+  # connected observables  
+  newPrice.connect()
+)

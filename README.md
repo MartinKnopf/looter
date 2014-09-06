@@ -30,11 +30,11 @@ Open {{index.html}} in the browser.
 * user can restart game at any time
 * restarting resets balance, turn count and starts new turn
 
-## MS - score
-* after 10 runs game prints maximum possible earning
-* a score is shown, claculated as percantage of max possible earning
+## MS - game over - 06.09.2014
+* after 10 runs game a prints the profit
+* profit is claculated as percantage
 
-## MS - time limitations
+## MS - time limitations - 06.09.2014
 * turns are limited in time (3 seconds)
 * a progress bar or timer indicates the time left to end the turn with an action
 * when the last turn ended automatically, the game ends
@@ -48,9 +48,19 @@ Open {{index.html}} in the browser.
 * score can get > 100 %
 
 ## MS - increased difficulty: multiple stocks
-* user can choose to start game with two stocks
-* max possible earnings will be calculated for two stocks
-* number of stocks affects score: score = score * (1 + 0.1 * number of stocks)
+* user can choose between 1 and 2 stocks
+* game rules with two stocks are the same as with 1 stock
+
+## MS - strategic element insider information
+* insider information will display next value
+* user can buy insider information per turn
+* costs: 1/3 of his balance and at least 1000 €
+* user cannot buy when balance is below 1000 €
+
+## MS - strategic element more time
+* user can buy time to extend turn time
+* costs: 500 €
+* user cannot buy when balance is below 500 €
 
 ## MS - build for PhoneGap
 

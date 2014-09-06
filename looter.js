@@ -20,8 +20,7 @@
   resetUi = function() {
     $('.turn-nr').text('');
     $('.stock1 .price').text('');
-    $('.max-possible-balance-container').hide();
-    return $('.score-container').hide();
+    return $('.profit-container').hide();
   };
 
   resetUi();
@@ -29,26 +28,24 @@
   clickStartGame = Rx.Observable.fromEvent($('.start-new-game'), 'click');
 
   clickStartGame.subscribe(function() {
-    var balance, canBuy, canSell, cannotBuy, cannotSell, clickBuy, clickNextTurn, clickSell, lastTurn, lowestPrice, maxPossibleBalance, newBuy, newPrice, newSell, newStockAmount, newTurn, score;
+    var balance, canBuy, canSell, cannotBuy, cannotSell, clickBuy, clickNextTurn, clickSell, lastTurn, newBuy, newPrice, newSell, newStockAmount, newTurn, profit, progressBar, resettableTimer;
     resetUi();
     $('.end-turn').prop('disabled', false);
     clickNextTurn = Rx.Observable.fromEvent($('.end-turn'), 'click');
     clickBuy = Rx.Observable.fromEvent($('.stock1 .buy'), 'click');
     clickSell = Rx.Observable.fromEvent($('.stock1 .sell'), 'click');
-    newTurn = clickNextTurn.startWith(1).select(function(event, idx) {
+    resettableTimer = clickNextTurn.merge(Rx.Observable.interval(3000).takeUntil(clickNextTurn).merge(clickNextTurn.flatMap(function() {
+      return Rx.Observable.interval(3000).takeUntil(clickNextTurn);
+    }))).takeUntil(clickStartGame);
+    newTurn = resettableTimer.startWith(1).select(function(event, idx) {
       return idx + 1;
     }).take(11);
-    lastTurn = newTurn.filter(function(x) {
-      return x > 10;
-    });
+    lastTurn = newTurn.filter(function(turn) {
+      return turn > 10;
+    }).combineLatest(clickNextTurn, function(turn, event) {
+      return turn;
+    }).takeUntil(clickStartGame);
     newPrice = newTurn.map(_.partial(sinPrice, stocks[0].min, stocks[0].max)).map(_.partial(randomize, stocks[0].min, stocks[0].max)).takeUntil(lastTurn).publish();
-    lowestPrice = newPrice.scan(10000, function(acc, price) {
-      if (acc <= price) {
-        return acc;
-      } else {
-        return price;
-      }
-    });
     newBuy = Rx.Observable.combineLatest(clickBuy, newPrice, function(event, price) {
       return {
         event: event,
@@ -101,14 +98,17 @@
     cannotSell = newStockAmount.filter(function(amount) {
       return amount <= 0;
     }).merge(lastTurn).startWith(true);
-    maxPossibleBalance = lastTurn.merge(balance.last().combineLatest(newPrice.min(), newPrice.max(), function(balance, minPrice, maxPrice) {
-      return Math.floor(10000 / minPrice) * maxPrice;
-    }));
-    score = maxPossibleBalance.combineLatest(balance.last(), function(max, actual) {
-      return Math.round(actual / max * 10000) / 100;
+    progressBar = newTurn.flatMap(function() {
+      return Rx.Observable.timer(0, 1000).take(3);
+    }).takeUntil(lastTurn);
+    profit = balance.last().map(function(x) {
+      return Math.round((x - 10000) / 10000 * 100 * 100) / 100;
     });
     newTurn.subscribe(function(turn) {
       return $('.turn-nr').text(turn);
+    });
+    newTurn.subscribe(function(turn) {
+      return $('.progress').text(3);
     });
     lastTurn.subscribe(function() {
       $('.turn-nr').text('game over');
@@ -138,13 +138,12 @@
     newStockAmount.subscribe(function(amount) {
       return $('.stock1 .amount').text(amount);
     });
-    maxPossibleBalance.subscribe(function(maxPossibleBalance) {
-      $('.max-possible-balance-container').show();
-      return $('.max-possible-balance').text(maxPossibleBalance);
+    progressBar.subscribe(function(t) {
+      return $('.progress').text(3 - t);
     });
-    score.subscribe(function(score) {
-      $('.score-container').show();
-      return $('.score').text(score + ' %');
+    profit.subscribe(function(profit) {
+      $('.profit-container').show();
+      return $('.profit').text(profit + ' %');
     });
     return newPrice.connect();
   });

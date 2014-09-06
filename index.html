@@ -9,21 +9,27 @@
 </head>
 <body>
 
-  <div>turn: <span class="turn-nr"></span></div>
+  <p>
+    <div>turn: <span class="turn-nr"></span></div>
+    <div>time left: <span class="progress">---</span></div>
 
-  <div>balance: <span class="balance"></span></div>
+    <div>balance: <span class="balance"></span></div>
 
-  <div><button class="end-turn" disabled="disabled">end turn turn</button><button class="start-new-game">start new game</button></div>
+    <div><button class="end-turn" disabled="disabled">end turn turn</button><button class="start-new-game">start new game</button></div>
+  </p>
 
-  <div class="stock1">
-    horsed ag: <span class="price"></span>
-    <div>amount: <span class="amount"></span></div>
-    <div><button class="buy" disabled="disabled">buy</button><button class="sell" disabled="disabled">sell</button></div>
-  </div>
+  <p>
+    <div class="stock1">
+      horsed ag: <span class="price"></span>
+      <div>amount: <span class="amount"></span></div>
+      <div><button class="buy" disabled="disabled">buy</button><button class="sell" disabled="disabled">sell</button></div>
+    </div>
+  </p>
   
-  <div class="max-possible-balance-container">max possible balance: <span class="max-possible-balance"></span></div>
-  <div class="score-container">score: <span class="score"></span></div>
-
+  <p>
+    <div class="profit-container">profit: <span class="profit"></span></div>
+  </p>
+  
   <script src="looter.js"></script>
 </body>
 </html>

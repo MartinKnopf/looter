@@ -5,36 +5,10 @@ stocks = [{
 
 sinPrice = (min, max, x) -> Math.floor((Math.sin(x) + 1.4) * (max + 1 - min) + min)
 randomize = (min, max, price) -> Math.floor(_.random(price - _.random(min, max) / 2, price + _.random(min, max) / 2))
-maxDiff (int arr[], int n)
-{
-    // Initialize diff, current sum and max sum
-    int diff = arr[1]-arr[0];
-    int curr_sum = diff;
-    int max_sum = curr_sum;
- 
-    for(int i=1; i<n-1; i++)
-    {
-        // Calculate current diff
-        diff = arr[i+1]-arr[i];
- 
-        // Calculate current sum
-        if (curr_sum > 0)
-           curr_sum += diff;
-        else
-           curr_sum = diff;
- 
-        // Update max sum, if needed
-        if (curr_sum > max_sum)
-           max_sum = curr_sum;
-    }
- 
-    return max_sum;
-}
 resetUi = ->
   $('.turn-nr').text('')
   $('.stock1 .price').text('')
-  $('.max-possible-balance-container').hide()
-  $('.score-container').hide()
+  $('.profit-container').hide()
 
 resetUi()
 
@@ -50,22 +24,24 @@ clickStartGame.subscribe(->
   clickBuy      = Rx.Observable.fromEvent($('.stock1 .buy'), 'click')
   clickSell     = Rx.Observable.fromEvent($('.stock1 .sell'), 'click')
 
-  newTurn = clickNextTurn
+  resettableTimer = clickNextTurn
+    .merge(Rx.Observable.interval(3000).takeUntil(clickNextTurn)
+      .merge(clickNextTurn
+        .flatMap(-> Rx.Observable.interval(3000).takeUntil(clickNextTurn))))
+    .takeUntil(clickStartGame)
+
+  newTurn = resettableTimer
     .startWith(1)
     .select((event, idx) -> idx + 1)
     .take(11)
 
-  lastTurn = newTurn
-    .filter((x) -> x > 10)
+  lastTurn = newTurn.filter((turn) -> turn > 10).combineLatest(clickNextTurn, (turn, event) -> turn).takeUntil(clickStartGame)
 
   newPrice = newTurn
     .map(_.partial(sinPrice, stocks[0].min, stocks[0].max))
     .map(_.partial(randomize, stocks[0].min, stocks[0].max))
     .takeUntil(lastTurn)
     .publish()
-
-  lowestPrice = newPrice
-    .scan(10000, (acc, price) -> if acc <= price then acc else price)
 
   newBuy = Rx.Observable
     .combineLatest(clickBuy, newPrice, (event, price) -> {event: event, price: price})
@@ -112,22 +88,12 @@ clickStartGame.subscribe(->
     .merge(lastTurn)
     .startWith(true)
 
-  maxPossibleBalance = lastTurn
-    .merge(
-      balance
-        .last()
-        .combineLatest(newPrice.toArray(), (balance, prices) ->
-          minPrice = _.min(prices)
-          maxprice = _.max(prices)
-          if _.find(minPrice) > _.find(maxPrice)
-            # ...
-          
-          Math.floor(10000 / minPrice) * maxPrice))
+  progressBar = newTurn.flatMap(-> Rx.Observable.timer(0, 1000).take(3)).takeUntil(lastTurn)
 
-  score = maxPossibleBalance
-    .combineLatest(balance.last(), (max, actual) -> Math.round(actual / max * 10000) / 100)
+  profit = balance.last().map((x) -> Math.round((x - 10000) / 10000 * 100 * 100) / 100)
 
   newTurn.subscribe((turn) -> $('.turn-nr').text(turn))
+  newTurn.subscribe((turn) -> $('.progress').text(3))
 
   lastTurn.subscribe(->
     $('.turn-nr').text('game over')
@@ -149,13 +115,11 @@ clickStartGame.subscribe(->
 
   newStockAmount.subscribe((amount) -> $('.stock1 .amount').text(amount))
 
-  maxPossibleBalance.subscribe((maxPossibleBalance) ->
-    $('.max-possible-balance-container').show()
-    $('.max-possible-balance').text(maxPossibleBalance))
+  progressBar.subscribe((t) -> $('.progress').text(3-t))
 
-  score.subscribe((score) ->
-    $('.score-container').show()
-    $('.score').text(score + ' %'))
+  profit.subscribe((profit) ->
+    $('.profit-container').show()
+    $('.profit').text(profit + ' %'))
 
   # connected observables  
   newPrice.connect()

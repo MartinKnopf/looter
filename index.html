@@ -7,29 +7,30 @@
   <script src="lib/moment.min.js"></script>
   <script src="lib/lodash.min.js"></script>
 </head>
-<body>
+<body lt-ctrl="game">
 
   <p>
-    <div>turn: <span class="turn-nr"></span></div>
-    <div>time left: <span class="progress">---</span></div>
+    <div>turn: <span class="turn-nr" lt-text="newTurn,gameOver"></span></div>
+    <div>time left: <span class="progress" lt-text="progressBar"></span></div>
 
-    <div>balance: <span class="balance"></span></div>
+    <div>balance: <span class="balance" lt-text="balance"></span></div>
 
-    <div><button class="end-turn" disabled="disabled">end turn turn</button><button class="start-new-game">start new game</button></div>
+    <div><button class="end-turn" disabled="disabled" lt-disabled="lastTurn">end turn turn</button><button class="start-new-game">start new game</button></div>
   </p>
 
+  <div class="stock1">
+    <p>
+      horsed ag: <span class="price" lt-text="newPrice"></span>
+      <div>amount: <span class="amount" lt-text="newStockAmount"></span></div>
+      <div><button class="buy" disabled="disabled" lt-enabled="canBuy" lt-disabled="cannotBuy">buy</button><button class="sell" disabled="disabled" lt-enabled="canSell,newBuy" lt-disabled="cannotSell">sell</button></div>
+    </p>
+  </div>
+
   <p>
-    <div class="stock1">
-      horsed ag: <span class="price"></span>
-      <div>amount: <span class="amount"></span></div>
-      <div><button class="buy" disabled="disabled">buy</button><button class="sell" disabled="disabled">sell</button></div>
-    </div>
+    <span lt-show="profit" lt-hide="initApp,clickStartGame">profit: <span class="profit" lt-text="profit"></span></span>
   </p>
   
-  <p>
-    <div class="profit-container">profit: <span class="profit"></span></div>
-  </p>
-  
+  <script src="szep.js"></script>
   <script src="looter.js"></script>
 </body>
 </html>

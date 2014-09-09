@@ -5,18 +5,11 @@ stocks = [{
 
 sinPrice = (min, max, x) -> Math.floor((Math.sin(x) + 1.4) * (max + 1 - min) + min)
 randomize = (min, max, price) -> Math.floor(_.random(price - _.random(min, max) / 2, price + _.random(min, max) / 2))
-resetUi = ->
-  $('.turn-nr').text('')
-  $('.stock1 .price').text('')
-  $('.profit-container').hide()
 
-resetUi()
-
-clickStartGame  = Rx.Observable.fromEvent($('.start-new-game'), 'click')
+initApp = Rx.Observable.return(true)
+clickStartGame = Rx.Observable.fromEvent($('.start-new-game'), 'click')
 
 clickStartGame.subscribe(->
-
-  resetUi()
 
   $('.end-turn').prop('disabled', false)
 
@@ -35,7 +28,10 @@ clickStartGame.subscribe(->
     .select((event, idx) -> idx + 1)
     .take(11)
 
-  lastTurn = newTurn.filter((turn) -> turn > 10).combineLatest(clickNextTurn, (turn, event) -> turn).takeUntil(clickStartGame)
+  lastTurn = newTurn
+    .filter((turn) -> turn > 10)
+    .combineLatest(clickNextTurn, (turn, event) -> turn)
+    .takeUntil(clickStartGame)
 
   newPrice = newTurn
     .map(_.partial(sinPrice, stocks[0].min, stocks[0].max))
@@ -88,38 +84,35 @@ clickStartGame.subscribe(->
     .merge(lastTurn)
     .startWith(true)
 
-  progressBar = newTurn.flatMap(-> Rx.Observable.timer(0, 1000).take(3)).takeUntil(lastTurn)
+  progressBar = newTurn
+    .flatMap(-> Rx.Observable.timer(0, 1000).take(3))
+    .map((x) -> 3-x)
+    .startWith(3)
+    .takeUntil(lastTurn)
 
-  profit = balance.last().map((x) -> Math.round((x - 10000) / 10000 * 100 * 100) / 100)
+  profit = balance
+    .last()
+    .map((x) -> Math.round((x - 10000) / 10000 * 100 * 100) / 100)
+    .map((x) -> x + ' %')
 
-  newTurn.subscribe((turn) -> $('.turn-nr').text(turn))
-  newTurn.subscribe((turn) -> $('.progress').text(3))
+  gameOver = lastTurn.map(-> 'game over')
 
-  lastTurn.subscribe(->
-    $('.turn-nr').text('game over')
-    $('.end-turn').prop('disabled', true))
-
-  newPrice.subscribe((price) -> $('.stock1 .price').text(price))
-
-  balance.subscribe((balance) -> $('.balance').text(balance))
-
-  canBuy.subscribe(-> $('.stock1 .buy').prop('disabled', false))
-
-  cannotBuy.subscribe(-> $('.stock1 .buy').prop('disabled', true))
-
-  canSell.subscribe(-> $('.stock1 .sell').prop('disabled', false))
-
-  cannotSell.subscribe(-> $('.stock1 .sell').prop('disabled', true))
-
-  newBuy.subscribe(-> $('.stock1 .sell').prop('disabled', false))
-
-  newStockAmount.subscribe((amount) -> $('.stock1 .amount').text(amount))
-
-  progressBar.subscribe((t) -> $('.progress').text(3-t))
-
-  profit.subscribe((profit) ->
-    $('.profit-container').show()
-    $('.profit').text(profit + ' %'))
+  szep.ctrl('game',
+    initApp: initApp
+    clickStartGame: clickStartGame
+    newPrice: newPrice
+    newStockAmount: newStockAmount
+    canBuy: canBuy
+    newBuy: newBuy
+    cannotBuy: cannotBuy
+    canSell: canSell
+    cannotSell: cannotSell
+    newTurn: newTurn
+    balance: balance
+    progressBar: progressBar
+    lastTurn: lastTurn
+    gameOver: gameOver
+    profit: profit)
 
   # connected observables  
   newPrice.connect()

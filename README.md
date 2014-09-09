@@ -48,6 +48,7 @@ Open {{index.html}} in the browser.
 * score can get > 100 %
 
 ## MS - increased difficulty: multiple stocks
+* game does no longer show turn 11
 * user can choose between 1 and 2 stocks
 * game rules with two stocks are the same as with 1 stock
 
@@ -62,7 +63,10 @@ Open {{index.html}} in the browser.
 * costs: 500 €
 * user cannot buy when balance is below 500 €
 
+## MS - long term play
+* user has overall balance resulting from all games
+* balance at the end of a game is added to overall balance
+
 ## MS - build for PhoneGap
 
 ## MS - build for node-webkit
-* removes browserify <script> from index.html

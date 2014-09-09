@@ -1,11 +1,3 @@
-stocks = [{
-  min: 900,
-  max: 3500
-}]
-
-sinPrice = (min, max, x) -> Math.floor((Math.sin(x) + 1.4) * (max + 1 - min) + min)
-randomize = (min, max, price) -> Math.floor(_.random(price - _.random(min, max) / 2, price + _.random(min, max) / 2))
-
 initApp = Rx.Observable.return(true)
 clickStartGame = Rx.Observable.fromEvent($('.start-new-game'), 'click')
 
@@ -16,6 +8,13 @@ clickStartGame.subscribe(->
   clickNextTurn = Rx.Observable.fromEvent($('.end-turn'), 'click')
   clickBuy      = Rx.Observable.fromEvent($('.stock1 .buy'), 'click')
   clickSell     = Rx.Observable.fromEvent($('.stock1 .sell'), 'click')
+  oneStock      = Rx.Observable.fromEvent($('#1stock'), 'click')
+  twoStocks = Rx.Observable.fromEvent($('#2stocks'), 'click')
+
+  numStocks = oneStock
+    # .map((event) -> event.value)
+
+  numStocks.subscribe((x) -> console.log x)
 
   resettableTimer = clickNextTurn
     .merge(Rx.Observable.interval(3000).takeUntil(clickNextTurn)
@@ -30,12 +29,15 @@ clickStartGame.subscribe(->
 
   lastTurn = newTurn
     .filter((turn) -> turn > 10)
-    .combineLatest(clickNextTurn, (turn, event) -> turn)
     .takeUntil(clickStartGame)
 
+  minPrice = Rx.Observable.return(_.random(500, 900))
+
+  maxPrice = minPrice
+    .map((x) -> Math.floor(x * _.random(3, 8)))
+
   newPrice = newTurn
-    .map(_.partial(sinPrice, stocks[0].min, stocks[0].max))
-    .map(_.partial(randomize, stocks[0].min, stocks[0].max))
+    .combineLatest(minPrice, maxPrice, (turn, min, max) -> _.random(min, max))
     .takeUntil(lastTurn)
     .publish()
 
@@ -97,7 +99,7 @@ clickStartGame.subscribe(->
 
   gameOver = lastTurn.map(-> 'game over')
 
-  szep.ctrl('game',
+  reab.ctrl('game',
     initApp: initApp
     clickStartGame: clickStartGame
     newPrice: newPrice

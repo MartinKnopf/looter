@@ -10,6 +10,11 @@
 <body lt-ctrl="game">
 
   <p>
+    number of stocks: <input type="radio" id="1stock" name="numStocks" value="1" />&nbsp;1<br/>
+    <input type="radio" id="2stocks" name="numStocks" value="2" />&nbsp;2
+  </p>
+
+  <p>
     <div>turn: <span class="turn-nr" lt-text="newTurn,gameOver"></span></div>
     <div>time left: <span class="progress" lt-text="progressBar"></span></div>
 
@@ -30,7 +35,7 @@
     <span lt-show="profit" lt-hide="initApp,clickStartGame">profit: <span class="profit" lt-text="profit"></span></span>
   </p>
   
-  <script src="szep.js"></script>
+  <script src="reab.js"></script>
   <script src="looter.js"></script>
 </body>
 </html>
